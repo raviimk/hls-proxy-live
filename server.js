@@ -61,3 +61,23 @@ server.listen(PORT, () => {
   console.log(`✅ HLS Proxy running on port ${PORT}`);
   console.log(`Target: ${TARGET_URL}`);
 });
+
+if (req.url === '/stream.m3u8') {
+  https.get(TARGET_URL, (proxyRes) => {
+    let data = [];
+
+    proxyRes.on('data', chunk => data.push(chunk));
+
+    proxyRes.on('end', () => {
+      let body = Buffer.concat(data).toString();
+
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.apple.mpegurl',
+        'Access-Control-Allow-Origin': '*'
+      });
+
+      res.end(body);
+    });
+  });
+  return;
+}
