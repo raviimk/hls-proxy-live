@@ -7,9 +7,19 @@ const PLAYLIST = "/live/webcrichindi/playlist.m3u8?vidictid=205474799473&id=1197
 
 const PORT = process.env.PORT || 3000;
 
-// 🔥 fetch helper
+// 🔥 IMPORTANT HEADERS
+const defaultHeaders = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+  "Referer": "https://plu001.myturn1.top/",
+  "Origin": "https://plu001.myturn1.top"
+};
+
 function fetchUrl(targetUrl, res, rewrite = false) {
-  https.get(targetUrl, (proxyRes) => {
+  const options = {
+    headers: defaultHeaders
+  };
+
+  https.get(targetUrl, options, (proxyRes) => {
 
     let chunks = [];
 
@@ -19,12 +29,15 @@ function fetchUrl(targetUrl, res, rewrite = false) {
       const buffer = Buffer.concat(chunks);
       const contentType = proxyRes.headers["content-type"] || "";
 
-      // 🎯 Playlist rewrite
+      // 🎯 playlist rewrite
       if (rewrite && contentType.includes("mpegurl")) {
         let body = buffer.toString();
 
         body = body.replace(/(.*\.ts.*)/g, (match) => {
-          const fullUrl = match.startsWith("http") ? match : BASE + "/live/webcrichindi/" + match;
+          const fullUrl = match.startsWith("http")
+            ? match
+            : BASE + "/live/webcrichindi/" + match;
+
           return `/proxy?url=${encodeURIComponent(fullUrl)}`;
         });
 
@@ -35,7 +48,7 @@ function fetchUrl(targetUrl, res, rewrite = false) {
 
         res.end(body);
       } else {
-        // 🎯 video segments
+        // 🎯 segments
         res.writeHead(200, {
           ...proxyRes.headers,
           "Access-Control-Allow-Origin": "*"
@@ -45,30 +58,27 @@ function fetchUrl(targetUrl, res, rewrite = false) {
       }
     });
 
-  }).on("error", () => {
+  }).on("error", (err) => {
+    console.error("Fetch error:", err.message);
     res.writeHead(500);
-    res.end("Error fetching");
+    res.end("Error fetching stream");
   });
 }
 
-// 🚀 server
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
 
-  // health
   if (parsed.pathname === "/" || parsed.pathname === "/health") {
     res.writeHead(200);
     res.end("Proxy running ✅");
     return;
   }
 
-  // 🎯 main playlist
   if (parsed.pathname === "/stream.m3u8") {
     fetchUrl(BASE + PLAYLIST, res, true);
     return;
   }
 
-  // 🎯 proxy segments
   if (parsed.pathname === "/proxy") {
     const target = parsed.query.url;
     if (!target) return res.end("No URL");
