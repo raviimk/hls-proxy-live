@@ -1,11 +1,12 @@
 {
   "name": "hls-proxy-live",
   "version": "1.0.0",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "npx @warren-bank/hls-proxy --port $PORT --target \"https://plu001.myturn1.top:8088/live/webcrichindi/playlist.m3u8?vidictid=205474799473&id=119771&pk=b8522cf8e97336b762c8b9761a52c0d68f3d92020de5e3a97f648f3f12711144ab4e503d360532b216fc37acf43f56a5549ccfbb520e354c6eca6b94ad4516a9\" --referer \"https://go.webcric.com/watch-ipl-2026-in-hindi-live-cricket-streaming.htm\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "@warren-bank/hls-proxy": "^3.6.6"
+  },
   "engines": {
     "node": ">=18"
   }
